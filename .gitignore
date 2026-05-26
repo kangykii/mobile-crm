@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Secrets & local env
+.env
+.env.*
+*.pem
+
+# Build / temp
+.tmp-xlsx/
+.tmp-xlsx.zip
+*.zip
+dist/
+.cache/
+
+# OS & editor
+.DS_Store
+Thumbs.db
+*.log
+.idea/
+.vscode/
+
+# Cursor / assets (optional local screenshots)
+assets/

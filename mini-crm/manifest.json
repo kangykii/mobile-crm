@@ -1,0 +1,24 @@
+{
+  "name": "Mini CRM",
+  "short_name": "Mini CRM",
+  "description": "A web-native CRM PWA powered by your own spreadsheet.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F2F2F7",
+  "theme_color": "#0176D3",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='48' fill='%230176D3'/%3E%3Cpath d='M54 126V66h22v60H54Zm31 0V42h22v84H85Zm31 0V84h22v42h-22Z' fill='%23FFFFFF'/%3E%3C/svg%3E",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='128' fill='%230176D3'/%3E%3Cpath d='M144 336V176h58v160h-58Zm83 0V112h58v224h-58Zm83 0V224h58v112h-58Z' fill='%23FFFFFF'/%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

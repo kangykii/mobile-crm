@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0176D3" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Mini CRM" />
+    <title>Mini CRM</title>
+    <link rel="manifest" href="./manifest.json" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: [
+                "-apple-system",
+                "BlinkMacSystemFont",
+                '"SF Pro Text"',
+                '"SF Pro Display"',
+                "system-ui",
+                "sans-serif",
+              ],
+            },
+          },
+        },
+      };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/idb-keyval@6/dist/umd.js"></script>
+    <style>
+      :root {
+        color-scheme: light;
+        --sf-brand: #0176d3;
+        --sf-brand-dark: #014486;
+        --sf-brand-tint: #eaf5fe;
+        --apple-bg: #f2f2f7;
+        --apple-bg-secondary: #e5e5ea;
+        --sf-surface: #ffffff;
+        --sf-border: rgba(60, 60, 67, 0.12);
+        --sf-text: #181818;
+        --sf-text-weak: #706e6b;
+        --glass-fill: rgba(255, 255, 255, 0.72);
+        --glass-fill-strong: rgba(255, 255, 255, 0.88);
+        --glass-divider: rgba(60, 60, 67, 0.12);
+        --safe-bottom: env(safe-area-inset-bottom);
+        --font-sf: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", system-ui, sans-serif;
+      }
+
+      html,
+      body {
+        min-height: 100%;
+        background: var(--apple-bg);
+        color: var(--sf-text);
+        font-family: var(--font-sf);
+      }
+
+      .glass-bar {
+        background: var(--glass-fill);
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        border-color: var(--glass-divider);
+      }
+
+      .glass-bar-strong {
+        background: var(--glass-fill-strong);
+        backdrop-filter: blur(24px) saturate(180%);
+        -webkit-backdrop-filter: blur(24px) saturate(180%);
+        border-color: var(--glass-divider);
+      }
+
+      .glass-header {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        isolation: isolate;
+        padding-top: calc(env(safe-area-inset-top, 0px) + 1.5rem);
+        padding-bottom: 1rem;
+        margin-bottom: -0.5rem;
+        backdrop-filter: blur(22px) saturate(180%);
+        -webkit-backdrop-filter: blur(22px) saturate(180%);
+        background: linear-gradient(
+          180deg,
+          rgba(242, 242, 247, 0.94) 0%,
+          rgba(242, 242, 247, 0.82) 42%,
+          rgba(242, 242, 247, 0.52) 72%,
+          rgba(242, 242, 247, 0) 100%
+        );
+      }
+
+      @media (min-width: 1024px) {
+        .glass-header {
+          padding-top: 1.5rem;
+        }
+
+        .app-frame {
+          background: linear-gradient(180deg, #ececf1 0%, #f2f2f7 18%, #f2f2f7 100%);
+        }
+
+        .app-content {
+          min-height: 100vh;
+        }
+
+        .app-sidebar .glass-nav {
+          position: sticky;
+          top: 1.5rem;
+          min-height: calc(100vh - 3rem);
+        }
+
+        .drawer-shell {
+          top: 1.5rem;
+          right: 1.5rem;
+          bottom: 1.5rem;
+          left: auto;
+          width: min(28rem, calc(100vw - 20rem));
+          max-width: none;
+          margin: 0;
+          border-radius: 1.5rem;
+          max-height: none;
+        }
+      }
+
+      .glass-header::after {
+        content: "";
+        position: absolute;
+        inset: auto 0 0 0;
+        height: 1px;
+        background: linear-gradient(
+          90deg,
+          rgba(60, 60, 67, 0) 0%,
+          rgba(60, 60, 67, 0.08) 50%,
+          rgba(60, 60, 67, 0) 100%
+        );
+        pointer-events: none;
+      }
+
+      .glass-header-inner {
+        position: relative;
+        z-index: 1;
+      }
+
+      .glass-nav {
+        isolation: isolate;
+        backdrop-filter: blur(24px) saturate(190%);
+        -webkit-backdrop-filter: blur(24px) saturate(190%);
+        box-shadow:
+          0 10px 30px rgba(0, 0, 0, 0.08),
+          0 2px 8px rgba(0, 0, 0, 0.04),
+          inset 0 1px 0 rgba(255, 255, 255, 0.65);
+        background: linear-gradient(
+          0deg,
+          rgba(242, 242, 247, 0.98) 0%,
+          rgba(242, 242, 247, 0.9) 38%,
+          rgba(242, 242, 247, 0.68) 68%,
+          rgba(242, 242, 247, 0.12) 100%
+        );
+      }
+
+      .glass-nav::before {
+        content: "";
+        position: absolute;
+        inset: 0 0 auto 0;
+        height: 1px;
+        background: linear-gradient(
+          90deg,
+          rgba(60, 60, 67, 0) 0%,
+          rgba(60, 60, 67, 0.08) 50%,
+          rgba(60, 60, 67, 0) 100%
+        );
+        pointer-events: none;
+      }
+
+      .glass-nav-inner {
+        position: relative;
+        z-index: 1;
+      }
+
+      .swipe-row {
+        touch-action: pan-y;
+      }
+
+      .swipe-content {
+        touch-action: pan-y;
+        cursor: grab;
+      }
+
+      .swipe-content:active {
+        cursor: grabbing;
+      }
+
+      .stage-segmented-track {
+        gap: 0;
+      }
+
+      .stage-segment:not(.stage-segment-active) + .stage-segment:not(.stage-segment-active) {
+        box-shadow: inset 1px 0 0 rgba(60, 60, 67, 0.14);
+      }
+
+      .inline-avatar {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.75rem;
+        height: 1.75rem;
+        border-radius: 9999px;
+        background: var(--sf-brand-tint);
+        color: var(--sf-brand);
+        font-size: 0.625rem;
+        font-weight: 800;
+        vertical-align: middle;
+        flex-shrink: 0;
+      }
+
+      .inline-avatar-lg {
+        width: 2rem;
+        height: 2rem;
+        font-size: 0.6875rem;
+      }
+
+      .view-enter {
+        animation: view-fade 220ms ease-out;
+      }
+
+      .drawer-enter {
+        animation: drawer-slide 520ms cubic-bezier(0.22, 1.18, 0.36, 1) forwards;
+      }
+
+      .toast-enter {
+        animation: toast-slide 260ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      }
+
+      .scroll-soft {
+        scrollbar-width: none;
+      }
+
+      .scroll-soft::-webkit-scrollbar {
+        display: none;
+      }
+
+      @keyframes view-fade {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes drawer-slide {
+        from {
+          opacity: 0;
+          transform: translateY(36px) scale(0.98);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      .drawer-shell {
+        left: 0;
+        right: 0;
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      [data-editable-field] [data-editable-value] {
+        cursor: text;
+      }
+
+      [data-editable-field][data-editing="true"] {
+        outline: 2px solid rgba(1, 118, 211, 0.35);
+        outline-offset: 2px;
+      }
+
+      .activity-spine {
+        position: relative;
+      }
+
+      .activity-spine::before {
+        content: "";
+        position: absolute;
+        left: 1.125rem;
+        top: 1.125rem;
+        bottom: 1.125rem;
+        width: 1px;
+        background: rgba(60, 60, 67, 0.16);
+      }
+
+      .activity-item:last-child .activity-node::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: 100%;
+        width: 1px;
+        height: 999px;
+        background: #ffffff;
+        transform: translateX(-50%);
+      }
+
+      @keyframes toast-slide {
+        from {
+          opacity: 0;
+          transform: translateY(-18px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    </style>
+  </head>
+  <body class="min-h-screen bg-[#F2F2F7] font-sans text-[#181818] antialiased">
+    <div id="app">
+      <div class="app-frame mx-auto flex min-h-screen w-full max-w-[430px] items-center justify-center bg-[#F2F2F7] p-6 text-center lg:max-w-7xl">
+        <div>
+          <p class="text-2xl font-bold text-[#181818]">Loading Mini CRM</p>
+          <p class="mt-3 text-sm leading-6 text-[#706E6B]">If this stays here, open the app through a local HTTP server so ES modules can load.</p>
+        </div>
+      </div>
+    </div>
+    <div id="drawer-root"></div>
+    <script type="module" src="./src/app.js"></script>
+    <script>
+      window.addEventListener("error", (event) => {
+        const app = document.querySelector("#app");
+        if (!app) return;
+        app.innerHTML = `
+          <div class="app-frame mx-auto flex min-h-screen w-full max-w-[430px] items-center justify-center bg-[#F2F2F7] p-6 text-center lg:max-w-7xl">
+            <div class="rounded-3xl border border-[#FE5C4C]/30 bg-[#FEF1EE] p-5">
+              <p class="text-xl font-bold text-[#181818]">Mini CRM could not start</p>
+              <p class="mt-3 text-sm leading-6 text-[#BA0517]">${event.message || "Check the browser console for details."}</p>
+            </div>
+          </div>
+        `;
+      });
+
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker.register("./service-worker.js").catch((error) => {
+            console.warn("Service worker registration failed", error);
+          });
+        });
+      }
+    </script>
+  </body>
+</html>
