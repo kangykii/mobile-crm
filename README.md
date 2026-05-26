@@ -2,7 +2,7 @@
 
 **A lightweight sales CRM that runs in your browser and stores leads in a spreadsheet you already control.**
 
-**Compltely FREE forever. A cloud software with ZERO mainternance cost or fees**
+##**Compltely FREE forever. A cloud software with ZERO mainternance cost or fees**
 
 No proprietary database. No monthly CRM subscription required for storage. You connect **Google Sheets** or **Microsoft OneDrive Excel**, sign in with your own account, and manage leads from your phone or laptop like a native app.
 
