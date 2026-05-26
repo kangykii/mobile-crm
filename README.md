@@ -2,6 +2,8 @@
 
 **A lightweight sales CRM that runs in your browser and stores leads in a spreadsheet you already control.**
 
+**Compltely FREE forever. A cloud software with ZERO mainternance cost or fees**
+
 No proprietary database. No monthly CRM subscription required for storage. You connect **Google Sheets** or **Microsoft OneDrive Excel**, sign in with your own account, and manage leads from your phone or laptop like a native app.
 
 To run this lightweight command center for yourself, simply fork this repository, link your cloud spreadsheet using the environment variable templates provided in the Settings documentation, and host it instantly on Vercel by deploying your newly created fork as a custom project.
