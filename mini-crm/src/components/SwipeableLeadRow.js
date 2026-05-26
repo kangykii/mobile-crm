@@ -1,161 +1,65 @@
+import { getStageTheme } from "../core/utils/stageTheme.js";
 import { LeadCard } from "./LeadCard.js";
-import { getNextStage } from "../core/utils/UrgencyDetector.js";
-const REVEAL_WIDTH = 88;
-const SNAP_THRESHOLD = 40;
 
 export function SwipeableLeadRow(lead, { compact = false } = {}) {
-  const nextStage = getNextStage(lead.Stage);
-  const swipeEnabled = Boolean(nextStage);
+  const theme = getStageTheme(lead.Stage);
 
   return `
     <div
-      class="swipe-row relative overflow-hidden rounded-2xl bg-[#F2F2F7]"
-      data-swipe-row
+      class="lead-row cursor-pointer overflow-hidden rounded-2xl transition hover:brightness-[0.98]"
+      data-lead-row
       data-lead-id="${lead.ID}"
-      data-swipe-enabled="${swipeEnabled ? "true" : "false"}"
-      data-next-stage="${nextStage || ""}"
+      title="Double-tap to open"
+      style="background:${theme.fill}; box-shadow: inset 0 0 0 1px ${theme.accent}28;"
     >
-      ${
-        swipeEnabled
-          ? `<div class="swipe-action absolute inset-y-0 left-0 flex w-[88px] items-center justify-center bg-[#34C759] px-2">
-              <button type="button" data-swipe-advance class="px-1 text-center text-[10px] font-bold leading-tight text-white">
-                Move to Next Stage
-              </button>
-            </div>`
-          : ""
-      }
-      <div class="swipe-content relative rounded-2xl bg-white transition-transform duration-200 ease-out will-change-transform">
-        ${LeadCard(lead, { compact })}
-      </div>
+      ${LeadCard(lead, { compact, theme })}
     </div>
   `;
 }
 
-export function bindSwipeableRows(root, { onAdvanceStage, onOpenLead, leads = [] } = {}) {
-  root.querySelectorAll("[data-swipe-row]").forEach((row) => {
-    if (row.dataset.swipeBound === "true") {
+export function bindSwipeableRows(root, { onOpenLead, leads = [] } = {}) {
+  root.querySelectorAll("[data-lead-row]").forEach((row) => {
+    if (row.dataset.leadBound === "true") {
       return;
     }
 
-    row.dataset.swipeBound = "true";
-    const content = row.querySelector(".swipe-content");
-    const enabled = row.dataset.swipeEnabled === "true";
-    let startX = 0;
-    let startY = 0;
-    let currentX = 0;
-    let dragging = false;
-    let moved = false;
-    let axisLock = null;
+    row.dataset.leadBound = "true";
+    let lastTap = 0;
 
-    const setTranslate = (x) => {
-      currentX = Math.max(0, Math.min(REVEAL_WIDTH, x));
-      content.style.transform = `translateX(${currentX}px)`;
-    };
-
-    const snap = (open) => {
-      setTranslate(open ? REVEAL_WIDTH : 0);
-    };
-
-    const closeOthers = () => {
-      root.querySelectorAll("[data-swipe-row]").forEach((other) => {
-        if (other === row) {
-          return;
-        }
-
-        const otherContent = other.querySelector(".swipe-content");
-        if (otherContent) {
-          otherContent.style.transform = "translateX(0)";
-        }
-      });
-    };
-
-    const onPointerDown = (event) => {
-      if (!enabled) {
-        return;
-      }
-
-      dragging = true;
-      moved = false;
-      axisLock = null;
-      startX = event.clientX - currentX;
-      startY = event.clientY;
-      content.setPointerCapture?.(event.pointerId);
-    };
-
-    const onPointerMove = (event) => {
-      if (!dragging || !enabled) {
-        return;
-      }
-
-      const deltaX = event.clientX - startX;
-      const deltaY = event.clientY - startY;
-
-      if (!axisLock) {
-        if (Math.abs(deltaX) < 6 && Math.abs(deltaY) < 6) {
-          return;
-        }
-
-        axisLock = Math.abs(deltaX) > Math.abs(deltaY) ? "x" : "y";
-      }
-
-      if (axisLock !== "x") {
-        dragging = false;
-        return;
-      }
-
-      event.preventDefault();
-      if (Math.abs(deltaX) > 6) {
-        moved = true;
-        closeOthers();
-      }
-
-      setTranslate(deltaX);
-    };
-
-    const onPointerUp = () => {
-      if (!dragging) {
-        return;
-      }
-
-      dragging = false;
-      snap(currentX >= SNAP_THRESHOLD);
-    };
-
-    content.addEventListener("pointerdown", onPointerDown);
-    content.addEventListener("pointermove", onPointerMove);
-    content.addEventListener("pointerup", onPointerUp);
-    content.addEventListener("pointercancel", onPointerUp);
-
-    row.querySelector("[data-swipe-advance]")?.addEventListener("click", (event) => {
-      event.stopPropagation();
-      const leadId = row.dataset.leadId;
-      const nextStage = row.dataset.nextStage;
-      if (leadId && nextStage) {
-        onAdvanceStage?.(leadId, nextStage);
-      }
-      snap(false);
-    });
-
-    row.querySelector(".lead-card")?.addEventListener("click", (event) => {
-      if (moved) {
-        moved = false;
-        return;
-      }
-
-      if (event.target.closest(".quick-action")) {
-        return;
-      }
-
+    const openLead = () => {
       const lead = leads.find((item) => item.ID === row.dataset.leadId);
       if (lead) {
         onOpenLead?.(lead);
       }
+    };
+
+    row.addEventListener("dblclick", (event) => {
+      if (event.target.closest(".quick-action")) {
+        return;
+      }
+
+      event.preventDefault();
+      openLead();
+    });
+
+    row.addEventListener("click", (event) => {
+      if (event.target.closest(".quick-action")) {
+        return;
+      }
+
+      const now = Date.now();
+      if (now - lastTap < 360) {
+        event.preventDefault();
+        openLead();
+        lastTap = 0;
+        return;
+      }
+
+      lastTap = now;
     });
   });
 }
 
-export function resetSwipeableRows(root) {
-  root.querySelectorAll("[data-swipe-row] .swipe-content").forEach((content) => {
-    content.style.transform = "translateX(0)";
-  });
+export function resetSwipeableRows() {
+  // No-op — kept for callers that reset swipe state after re-render.
 }

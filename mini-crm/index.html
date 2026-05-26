@@ -44,7 +44,11 @@
         --glass-fill: rgba(255, 255, 255, 0.72);
         --glass-fill-strong: rgba(255, 255, 255, 0.88);
         --glass-divider: rgba(60, 60, 67, 0.12);
-        --safe-bottom: env(safe-area-inset-bottom);
+        --safe-top: env(safe-area-inset-top, 0px);
+        --safe-bottom: env(safe-area-inset-bottom, 0px);
+        --app-vh: 100dvh;
+        --app-vw: 100vw;
+        --sidebar-pad-y: 1rem;
         --font-sf: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", system-ui, sans-serif;
       }
 
@@ -91,21 +95,57 @@
 
       @media (min-width: 1024px) {
         .glass-header {
-          padding-top: 1.5rem;
+          padding-top: 1.25rem;
         }
 
-        .app-frame {
-          background: linear-gradient(180deg, #ececf1 0%, #f2f2f7 18%, #f2f2f7 100%);
+        .app-shell {
+          background: #f2f2f7;
+        }
+
+        .app-layout {
+          display: grid;
+          grid-template-columns: minmax(12.5rem, 13.5rem) minmax(0, 1fr);
+          gap: 1.25rem;
+          width: 100%;
+          max-width: none;
+          min-height: var(--app-vh, 100dvh);
+          padding:
+            max(0.75rem, var(--safe-top))
+            max(1rem, env(safe-area-inset-right, 0px))
+            max(0.75rem, var(--safe-bottom))
+            max(1rem, env(safe-area-inset-left, 0px));
+          box-sizing: border-box;
+        }
+
+        .app-sidebar {
+          display: flex;
+          flex-direction: column;
+          min-height: 0;
+          max-height: calc(var(--app-vh, 100dvh) - max(0.75rem, var(--safe-top)) - max(0.75rem, var(--safe-bottom)));
+          height: calc(var(--app-vh, 100dvh) - max(0.75rem, var(--safe-top)) - max(0.75rem, var(--safe-bottom)));
+          overflow: hidden;
+          box-sizing: border-box;
         }
 
         .app-content {
-          min-height: 100vh;
+          min-height: 0;
+          min-width: 0;
+          max-height: calc(var(--app-vh, 100dvh) - max(0.75rem, var(--safe-top)) - max(0.75rem, var(--safe-bottom)));
+          overflow-y: auto;
         }
 
         .app-sidebar .glass-nav {
-          position: sticky;
-          top: 1.5rem;
-          min-height: calc(100vh - 3rem);
+          display: flex;
+          flex: 1;
+          flex-direction: column;
+          min-height: 0;
+          max-height: 100%;
+          overflow: hidden;
+        }
+
+        .app-sidebar .glass-nav-inner {
+          min-height: 0;
+          overflow-y: auto;
         }
 
         .drawer-shell {
@@ -113,7 +153,7 @@
           right: 1.5rem;
           bottom: 1.5rem;
           left: auto;
-          width: min(28rem, calc(100vw - 20rem));
+          width: min(28rem, calc(100vw - 17rem));
           max-width: none;
           margin: 0;
           border-radius: 1.5rem;
@@ -176,17 +216,9 @@
         z-index: 1;
       }
 
-      .swipe-row {
-        touch-action: pan-y;
-      }
-
-      .swipe-content {
-        touch-action: pan-y;
-        cursor: grab;
-      }
-
-      .swipe-content:active {
-        cursor: grabbing;
+      .lead-row {
+        user-select: none;
+        -webkit-user-select: none;
       }
 
       .stage-segmented-track {
@@ -315,7 +347,7 @@
   </head>
   <body class="min-h-screen bg-[#F2F2F7] font-sans text-[#181818] antialiased">
     <div id="app">
-      <div class="app-frame mx-auto flex min-h-screen w-full max-w-[430px] items-center justify-center bg-[#F2F2F7] p-6 text-center lg:max-w-7xl">
+      <div class="app-shell mx-auto flex min-h-screen w-full max-w-[430px] items-center justify-center bg-[#F2F2F7] p-6 text-center lg:max-w-none">
         <div>
           <p class="text-2xl font-bold text-[#181818]">Loading Mini CRM</p>
           <p class="mt-3 text-sm leading-6 text-[#706E6B]">If this stays here, open the app through a local HTTP server so ES modules can load.</p>
@@ -329,7 +361,7 @@
         const app = document.querySelector("#app");
         if (!app) return;
         app.innerHTML = `
-          <div class="app-frame mx-auto flex min-h-screen w-full max-w-[430px] items-center justify-center bg-[#F2F2F7] p-6 text-center lg:max-w-7xl">
+          <div class="app-shell mx-auto flex min-h-screen w-full max-w-[430px] items-center justify-center bg-[#F2F2F7] p-6 text-center lg:max-w-none">
             <div class="rounded-3xl border border-[#FE5C4C]/30 bg-[#FEF1EE] p-5">
               <p class="text-xl font-bold text-[#181818]">Mini CRM could not start</p>
               <p class="mt-3 text-sm leading-6 text-[#BA0517]">${event.message || "Check the browser console for details."}</p>

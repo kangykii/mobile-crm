@@ -1,5 +1,7 @@
+import { getStageTheme } from "../core/utils/stageTheme.js";
 import { getLeadUrgency } from "../core/utils/UrgencyDetector.js";
-import { actionHref, formatCurrency, formatRelativeTime } from "../core/utils/formatters.js";
+import { actionHref, formatCurrency, formatRelativeTime, initials } from "../core/utils/formatters.js";
+
 const ACTIONS = [
   { kind: "call", label: "Call", icon: "M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.77.63 2.6a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.48-1.2a2 2 0 0 1 2.11-.45c.83.3 1.7.51 2.6.63A2 2 0 0 1 22 16.92Z" },
   { kind: "email", label: "Email", icon: "M4 6h16v12H4V6Zm0 1 8 6 8-6" },
@@ -34,24 +36,39 @@ function urgencyAccent(urgency) {
   return "";
 }
 
-export function LeadCard(lead, { compact = false } = {}) {
+export function LeadCard(lead, { compact = false, theme = null } = {}) {
   const urgency = getLeadUrgency(lead);
+  const stageTheme = theme || getStageTheme(lead.Stage);
   const cardSpacing = compact ? "p-3" : "p-4";
 
   return `
     <article
-      class="lead-card bg-white ${cardSpacing}"
+      class="lead-card ${cardSpacing}"
       data-lead-id="${lead.ID}"
       data-urgency="${urgency}"
     >
       <div class="flex items-start gap-3">
-        <span class="mt-0.5 inline-flex h-6 w-6 shrink-0 rounded-full border-2 border-[#C7C7CC]" aria-hidden="true"></span>
+        <span
+          class="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/80 text-xs font-bold shadow-sm"
+          style="color:${stageTheme.text};"
+          aria-hidden="true"
+        >
+          ${initials(lead.Name) || "?"}
+        </span>
         <div class="min-w-0 flex-1">
           <div class="flex items-start justify-between gap-3">
             <div class="min-w-0">
               <h3 class="truncate text-base font-bold text-[#181818]">${lead.Name}</h3>
               <p class="mt-0.5 truncate text-xs font-medium text-[#706E6B]">${lead.Company}</p>
-              <p class="mt-1 text-[11px] font-medium text-[#969492]">${lead.Stage} · ${formatRelativeTime(lead.LastContactedAt)}</p>
+              <p class="mt-1.5 inline-flex items-center gap-1.5">
+                <span
+                  class="inline-flex rounded-full bg-white/75 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide shadow-sm"
+                  style="color:${stageTheme.text};"
+                >
+                  ${lead.Stage}
+                </span>
+                <span class="text-[11px] font-medium text-[#969492]">${formatRelativeTime(lead.LastContactedAt)}</span>
+              </p>
               ${urgencyAccent(urgency)}
             </div>
             <p class="text-right text-base font-bold text-[#0176D3]">${formatCurrency(lead.Value)}</p>
@@ -74,7 +91,8 @@ function actionButton(action, lead) {
 
   return `
     <a
-      class="quick-action inline-flex items-center gap-1.5 rounded-full bg-[#F2F2F7] px-3 py-2 text-xs font-bold text-[#0176D3] transition hover:bg-[#EAF5FE]"
+      class="quick-action inline-flex items-center gap-1.5 rounded-full bg-white/85 px-3 py-2 text-xs font-bold shadow-sm transition hover:bg-white"
+      style="color:${getStageTheme(lead.Stage).text};"
       href="${actionHref(action.kind, value)}"
       data-action="${action.kind}"
       aria-label="${action.label} ${lead.Name}"

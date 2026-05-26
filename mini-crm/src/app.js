@@ -6,6 +6,7 @@ import { createStorageAdapter } from "./adapters/AdapterFactory.js";
 import { TokenManager } from "./auth/TokenManager.js";
 import { initials } from "./core/utils/formatters.js";
 import { createWebPlatform } from "./platform/web/createWebPlatform.js";
+import { bindViewportVars } from "./platform/web/viewport.js";
 import { LeadStore } from "./store/LeadStore.js";
 import { LeadCache } from "./sync/LeadCache.js";
 import { OfflineQueue } from "./sync/OfflineQueue.js";
@@ -235,7 +236,7 @@ class MiniCrmApp {
   render() {
     if (!this.authReady || (this.signedIn && this.store.hydrationState === "loading")) {
       this.root.innerHTML = `
-        <div class="app-frame mx-auto flex min-h-screen w-full max-w-[430px] items-center justify-center bg-[#F2F2F7] px-5 lg:max-w-7xl">
+        <div class="app-frame mx-auto flex min-h-screen w-full max-w-[430px] items-center justify-center bg-[#F2F2F7] px-5 lg:max-w-none lg:px-8">
           <p class="text-sm font-semibold text-[#706E6B]">Loading Mini CRM…</p>
         </div>
       `;
@@ -246,8 +247,8 @@ class MiniCrmApp {
     const showNav = this.signedIn && this.activeView !== "add";
 
     this.root.innerHTML = `
-      <div class="app-frame mx-auto min-h-screen w-full max-w-[430px] bg-[#F2F2F7] lg:max-w-7xl lg:px-6">
-        <div class="lg:flex lg:min-h-screen lg:gap-6">
+      <div class="app-shell min-h-screen w-full bg-[#F2F2F7]">
+        <div class="app-layout mx-auto flex min-h-screen w-full max-w-[430px] lg:max-w-none">
           ${showNav ? this.nav.renderSidebar(this.activeView) : ""}
           <div class="app-content min-w-0 flex-1">
             ${PageHeader({
@@ -329,4 +330,5 @@ class MiniCrmApp {
 }
 
 const app = new MiniCrmApp(appRoot, drawerRoot);
+bindViewportVars();
 app.start();

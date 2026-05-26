@@ -1,4 +1,4 @@
-const CACHE_NAME = "mini-crm-v32";
+const CACHE_NAME = "mini-crm-v35";
 
 const APP_SHELL = [
   "./",
@@ -7,6 +7,7 @@ const APP_SHELL = [
   "./src/app.js",
   "./src/store/LeadStore.js",
   "./src/platform/LeadRepository.js",
+  "./src/platform/web/viewport.js",
   "./src/platform/web/createWebPlatform.js",
   "./src/platform/web/InMemoryLeadRepository.js",
   "./src/platform/web/mockLeads.js",
@@ -22,6 +23,7 @@ const APP_SHELL = [
   "./src/core/utils/UrgencyDetector.js",
   "./src/core/utils/ActivityFeed.js",
   "./src/core/utils/formatters.js",
+  "./src/core/utils/stageTheme.js",
   "./src/core/utils/uuid.js",
   "./src/auth/TokenManager.js",
   "./src/adapters/BaseStorageAdapter.js",

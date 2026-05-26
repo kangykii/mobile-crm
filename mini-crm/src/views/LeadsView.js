@@ -1,6 +1,7 @@
 import { AddNewCard, bindAddNewCard } from "../components/AddNewCard.js";
 import { EmptyState, bindEmptyState } from "../components/EmptyState.js";
 import { bindSwipeableRows, SwipeableLeadRow } from "../components/SwipeableLeadRow.js";
+import { getStageTheme } from "../core/utils/stageTheme.js";
 import { STAGES } from "../core/utils/UrgencyDetector.js";
 
 const STAGE_FILTERS = ["All", ...STAGES];
@@ -27,15 +28,52 @@ export class LeadsView {
   }
 
   render() {
+    const activeTheme = getStageTheme(this.stageFilter === "All" ? "All" : this.stageFilter);
+
     return `
-      <main class="view-enter px-5 pb-32 pt-2 lg:px-8 lg:pb-8">
+      <main
+        class="view-enter px-4 pb-32 pt-2 sm:px-5 lg:px-6 lg:pb-8"
+        style="${this.stageFilter !== "All" ? `background: linear-gradient(180deg, ${activeTheme.fill} 0%, rgba(242,242,247,0) 12rem);` : ""}"
+      >
         ${this.toolbarTemplate()}
-        <section class="mt-5">
+        ${this.stageStripTemplate()}
+        <section class="mt-4">
           <div class="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0 xl:grid-cols-3" data-leads-list>
             ${this.listTemplate(this.getFilteredLeads())}
           </div>
         </section>
       </main>
+    `;
+  }
+
+  stageStripTemplate() {
+    const filters = STAGE_FILTERS;
+
+    return `
+        <section class="mt-3" data-stage-strip>
+          <p class="mb-2 text-[10px] font-semibold uppercase tracking-wide text-[#969492]">Pipeline stage · double-tap a lead to open</p>
+        <div class="scroll-soft flex gap-2 overflow-x-auto pb-1">
+          ${filters
+            .map((stage) => {
+              const theme = getStageTheme(stage === "All" ? "All" : stage);
+              const active = this.stageFilter === stage;
+              return `
+                <button
+                  type="button"
+                  data-stage-filter="${stage}"
+                  class="shrink-0 rounded-full px-3.5 py-2 text-xs font-bold transition ${
+                    active ? "shadow-sm" : "opacity-80 hover:opacity-100"
+                  }"
+                  style="${active ? `background:${theme.accent}; color:#ffffff;` : `background:${theme.fill}; color:${theme.text};`}"
+                  aria-pressed="${active}"
+                >
+                  ${stage}
+                </button>
+              `;
+            })
+            .join("")}
+        </div>
+      </section>
     `;
   }
 
@@ -108,6 +146,27 @@ export class LeadsView {
     this.bindLeadRows(root);
     bindAddNewCard(root);
 
+    root.querySelector("#view-root")?.addEventListener("click", (event) => {
+      const stageButton = event.target.closest("[data-stage-filter]");
+      if (stageButton) {
+        event.stopPropagation();
+        this.stageFilter = stageButton.dataset.stageFilter;
+        this.openMenu = null;
+        this.syncToolbar(root);
+        this.refreshView(root);
+        return;
+      }
+
+      const sortButton = event.target.closest("[data-sort-option]");
+      if (sortButton) {
+        event.stopPropagation();
+        this.sortBy = sortButton.dataset.sortOption;
+        this.openMenu = null;
+        this.syncToolbar(root);
+        this.refreshList(root);
+      }
+    });
+
     this.onOutsideClick = (event) => {
       const toolbar = root.querySelector("[data-leads-toolbar]");
       if (toolbar && !toolbar.contains(event.target) && this.openMenu) {
@@ -133,26 +192,6 @@ export class LeadsView {
         this.syncToolbar(root);
       });
     });
-
-    root.querySelectorAll("[data-stage-filter]").forEach((button) => {
-      button.addEventListener("click", (event) => {
-        event.stopPropagation();
-        this.stageFilter = button.dataset.stageFilter;
-        this.openMenu = null;
-        this.syncToolbar(root);
-        this.refreshList(root);
-      });
-    });
-
-    root.querySelectorAll("[data-sort-option]").forEach((button) => {
-      button.addEventListener("click", (event) => {
-        event.stopPropagation();
-        this.sortBy = button.dataset.sortOption;
-        this.openMenu = null;
-        this.syncToolbar(root);
-        this.refreshList(root);
-      });
-    });
   }
 
   syncToolbar(root) {
@@ -165,12 +204,24 @@ export class LeadsView {
     this.bindToolbar(root);
   }
 
+  refreshView(root) {
+    const main = root.querySelector("#view-root main");
+    if (!main) {
+      this.refreshList(root);
+      return;
+    }
+
+    main.outerHTML = this.render().match(/<main[\s\S]*<\/main>/)?.[0] || "";
+    this.bindToolbar(root);
+    this.bindLeadRows(root);
+    bindAddNewCard(root);
+  }
+
   bindLeadRows(root) {
     bindEmptyState(root);
     bindSwipeableRows(root, {
-      leads: this.store.getLeads(),
+      leads: this.getFilteredLeads(),
       onOpenLead: this.onOpenLead,
-      onAdvanceStage: (leadId, stage) => this.store.advanceStage(leadId, stage),
     });
   }
 

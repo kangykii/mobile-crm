@@ -1,210 +1,203 @@
 # Mini CRM
 
-A **web-native** progressive web app (PWA) for managing sales leads. Data syncs to **Google Sheets** or **Microsoft OneDrive Excel** — no desktop wrapper required. Optimized for phone and laptop screens.
+**A lightweight sales CRM that runs in your browser and stores leads in a spreadsheet you already control.**
 
-The app lives in [`mini-crm/`](mini-crm/).
+No proprietary database. No monthly CRM subscription required for storage. You connect **Google Sheets** or **Microsoft OneDrive Excel**, sign in with your own account, and manage leads from your phone or laptop like a native app.
 
----
-
-## Quick start
-
-1. Serve the app over HTTP (required for ES modules and OAuth):
-
-   ```bash
-   cd mini-crm
-   npx --yes serve -l 4173
-   ```
-
-2. Open **http://127.0.0.1:4173/** (use this exact URL for OAuth — not `index.html`).
-
-3. Follow [Google setup](#google-sheets-setup) below, then connect in the app.
-
-4. After code changes, hard-refresh or unregister the old service worker (cache version in `mini-crm/service-worker.js`).
+Repository: [github.com/kangykii/mobile-crm](https://github.com/kangykii/mobile-crm)
 
 ---
 
-## Features
+## What problem does this solve?
 
-| Area | Behavior |
-|------|----------|
-| **Backends** | Google Sheets (shared team sheet) or OneDrive `SoloCRM.xlsx` (per user) |
-| **Multi-user** | Shared spreadsheet; each user signs in with their own Google account; sees only leads they own (`OwnerEmail` column) |
-| **Offline** | Local-first edits; queue pushes when back online |
-| **Sync** | Push on each change when online; pull on load and reconnect |
-| **UI** | Mobile bottom nav; laptop sidebar; responsive layouts |
+Most small teams already track deals in a spreadsheet. Mini CRM adds a **mobile-friendly app** on top of that sheet:
+
+- Add and update leads with a clean UI
+- See pipeline stage, follow-ups, and recent activity
+- Work **offline** — changes queue and sync when you're back online
+- **Share one Google Sheet** with teammates; each person only sees the leads they created
+
+Your data stays in **your** Google Sheet or OneDrive file. The app is a smart client, not a data silo.
+
+---
+
+## Who is this for?
+
+| You might use Mini CRM if… | You might not need it if… |
+|-----------------------------|---------------------------|
+| You live in Google Sheets today and want a better mobile UI | You need enterprise CRM (Salesforce, HubSpot, etc.) |
+| You're a solo rep or small team (2–10 people) | You need complex automation, email sequences, or reporting |
+| You want offline-capable lead capture in the field | You don't want to set up Google Cloud OAuth |
+| You're comfortable pasting a Spreadsheet ID and Client ID once | You need a fully hosted SaaS with zero setup |
+
+---
+
+## How it works (30-second version)
+
+```text
+You (browser)  →  Mini CRM PWA  →  Google Sheets / OneDrive
+                      │
+                      ├─ Sign in with Google or Microsoft (OAuth)
+                      ├─ Edit leads locally (fast UI)
+                      └─ Sync rows to/from your spreadsheet
+```
+
+1. **Connect** — paste OAuth Client ID, sign in, paste Spreadsheet ID (Google) or let OneDrive create `SoloCRM.xlsx` (Microsoft).
+2. **Use the app** — Home dashboard, Leads list, Timeline, contact drawer per lead.
+3. **Sync** — changes push to the sheet when online; app pulls fresh data on load and reconnect.
+
+**Multi-user (Google Sheets):** everyone uses the **same Spreadsheet ID**, signs in with **their own Google account**, and only sees rows where `OwnerEmail` matches their email.
+
+---
+
+## What's in the app
+
+| Screen | What you do there |
+|--------|-------------------|
+| **Home** | Pipeline total, stats, shortcuts |
+| **Leads** | Search, filter by stage, double-tap a card to open details |
+| **Timeline** | Follow-ups and recent touchpoints |
+| **Add lead** | Create a contact with stage and value |
+| **Settings** | OAuth credentials, spreadsheet ID, sync retry, profile |
+
+Lead cards are **color-tinted by stage** (New, Contacted, Qualified, etc.). Open a lead to **move to the next stage**, call/email, add notes, and view timeline history.
+
+Works as a **PWA** (installable on phone) and adapts to **laptop screens** with a sidebar nav.
+
+---
+
+## Quick start (local dev)
+
+All app code lives in [`mini-crm/`](mini-crm/).
+
+```bash
+cd mini-crm
+npx --yes serve -l 4173
+```
+
+Open **http://127.0.0.1:4173/** — use this exact URL for OAuth (not `/index.html`).
+
+Then in the app:
+
+1. **Connect** → follow the on-screen **Quick setup** (copy redirect URI, create OAuth client, add test user).
+2. Sign in with Google.
+3. Create a sheet, rename tab to **`Leads`**, paste header row from the app.
+4. **Settings** → paste Spreadsheet URL or ID → **Save** → **Retry sync**.
+
+After deploys or updates, hard-refresh once (service worker cache in `mini-crm/service-worker.js`).
 
 ---
 
 ## Google Sheets setup
 
-### 1. Google Cloud
+### Google Cloud (one-time)
 
-1. [Google Cloud Console](https://console.cloud.google.com/) → create/select a project.
-2. **APIs & Services → Library** → enable **Google Sheets API**.
-3. **OAuth consent screen** → External → add your Gmail under **Test users** (while app is in Testing).
-4. **Clients** → create OAuth client:
-   - **Recommended:** Application type **Desktop app** → use **Client ID only** (no secret).
-   - **Alternative:** **Web application** → requires **Client secret** in the app (see below).
+1. [Google Cloud Console](https://console.cloud.google.com/) → create a project.
+2. Enable **Google Sheets API** (APIs & Services → Library).
+3. **OAuth consent screen** → External → add your Gmail under **Test users** (required while app is in Testing).
+4. **Clients** → Create OAuth client:
+   - **Recommended:** type **Desktop app** → Client ID only (no secret in the app).
+   - **Alternative:** type **Web application** → also paste **Client secret** in the app (`GOCSPX-…`).
 5. Register redirect URI **exactly**:
 
    ```text
    http://127.0.0.1:4173/
    ```
 
-   The app always uses `origin + /` (root path). Do not register `/index.html`.
+### Your spreadsheet
 
-### 2. OAuth in Mini CRM
-
-On **Connect** or **Settings**:
-
-- Use **Quick setup** → copy redirect URI → open **Create OAuth client**.
-- Paste **Client ID**.
-- If using a **Web** client: expand **“Web OAuth client? Add client secret”** and paste `GOCSPX-…` from Google Cloud.
-- **Connect Google Sheets**.
-
-### 3. Spreadsheet structure
-
-| Requirement | Detail |
-|-------------|--------|
-| **Tab name** | Bottom tab must be **`Leads`** — not `Sheet1`. The file title can be anything. |
-| **Header row** | Row 1, columns A–K (use **Copy header row** in the app) |
-
-Header columns:
+| Rule | Detail |
+|------|--------|
+| Tab name | **`Leads`** (rename `Sheet1` — this breaks sync if wrong) |
+| Header row | Row 1, columns A–K — use **Copy header row** in the app |
 
 ```text
 ID	Name	Company	Email	Phone	Value	Stage	LastContactedAt	CreatedAt	NotesTimeline	OwnerEmail
 ```
 
-4. **Settings** → paste full Google Sheets URL or Spreadsheet ID → **Save**.
-5. Share the sheet with teammates as **Editors** (same Spreadsheet ID for everyone).
+Paste your sheet URL or ID in **Settings**. Share the file with teammates as **Editors** for team use.
 
 ---
 
 ## Microsoft OneDrive (optional)
 
-1. Azure **App registration** → Authentication → platform **Single-page application (SPA)** — not Web.
-2. Add the same redirect URI: `http://127.0.0.1:4173/`
+1. Azure app registration → **Single-page application (SPA)** platform (not Web).
+2. Redirect URI: `http://127.0.0.1:4173/`
 3. Paste **Application (client) ID** only — no client secret.
-4. First sync creates `SoloCRM.xlsx` with a `Leads` table.
+4. First sync creates **`SoloCRM.xlsx`** in your OneDrive.
+
+Each Microsoft user gets their own file. For a shared team sheet, use Google Sheets.
 
 ---
 
-## How sync works
+## Sync & offline behavior
 
-| Event | What happens |
-|-------|----------------|
-| You edit a lead (online) | UI updates immediately → push to sheet |
-| You edit (offline) | Saved locally → **pending** until online |
-| App load / sign-in | Flush queue → pull from sheet |
-| Browser back online | Flush queue → pull |
-| **Tap status pill** or **Settings → Retry sync** | Manual flush + pull |
+| Situation | Behavior |
+|-----------|----------|
+| Edit while online | UI updates instantly → pushes to sheet |
+| Edit while offline | Saved locally → **pending** until online |
+| App open / sign-in | Pulls latest from sheet |
+| Back online | Flushes queue, then pulls |
+| Status pill orange | Pending changes or config issue — tap to retry |
 
-Status bar:
-
-- **Green** — synced, no pending items  
-- **Orange + “N pending”** — queued or misconfigured; hover/tap for hint  
-- **Syncing…** — push/pull in progress  
+**Settings → Retry sync** or tap the status pill in the header. If setup was wrong, fix the sheet tab / Spreadsheet ID first, then retry.
 
 ---
 
-## Troubleshooting
+## Common issues
 
-### OAuth errors
-
-| Error | Fix |
-|-------|-----|
-| `redirect_uri_mismatch` | Register `http://127.0.0.1:4173/` in Google/Azure; open app at that URL (not `/index.html`). |
-| `access_denied` / not verified | Add your Gmail under **Auth Platform → Audience → Test users**. |
-| `client_secret is missing` | Use **Desktop** OAuth client **or** paste Web client secret in the app. |
-| Stuck **pending** | See [Sync pending](#sync-stays-pending) below. |
-
-### Sync stays pending
-
-Usually the sheet push failed and items stayed in the queue:
-
-1. Rename tab **`Sheet1` → `Leads`**.
-2. Enable **Google Sheets API** in Cloud Console.
-3. Save **Spreadsheet ID** in Settings (full URL is OK).
-4. **Settings → Retry sync** or tap the status pill.
-5. If setup was wrong and the queue is stuck: **Clear pending queue** (local leads remain; re-sync after fixing config).
-
-Non-retryable errors (missing spreadsheet, wrong tab, API disabled) are no longer queued forever — you get a clear toast instead.
+| Symptom | Fix |
+|---------|-----|
+| `redirect_uri_mismatch` | Register `http://127.0.0.1:4173/` in Google/Azure; open app at that URL |
+| `access_denied` | Add your Gmail under OAuth **Test users** |
+| `client_secret is missing` | Use Desktop OAuth client, **or** paste Web client secret in Settings |
+| Sync stays **pending** | Tab must be **`Leads`**; enable Sheets API; save Spreadsheet ID; Retry sync |
+| Empty leads list | You only see rows you own (`OwnerEmail` = your signed-in email) |
+| Changes not on sheet | Check status pill; Settings → Retry sync |
 
 ---
 
-## Changelog — fixes & improvements
+## Tech stack
 
-This section documents work merged into the current codebase.
+- **Vanilla JS** (ES modules) — no React/Vue build step
+- **Tailwind CSS** (CDN)
+- **PWA** — service worker + manifest for offline shell
+- **OAuth 2.0 + PKCE** — Google Sheets API & Microsoft Graph
+- **IndexedDB** — offline queue and lead cache via `idb-keyval`
 
-### Multi-user & data model
-
-- Added **`OwnerEmail`** column (K) in `columnMap.js`; Google/Microsoft adapters use range `A:K`.
-- New leads stamp `OwnerEmail` from signed-in user email.
-- `filterLeadsForUser()` hides other users’ rows and legacy rows with empty `OwnerEmail`.
-- Filtered leads cached per device for correct offline view.
-
-### Profile & UX
-
-- Profile: name, email (OAuth), editable **company**; **initials-only** avatar (no photos).
-- **SyncInstructions** with copy-paste header row and setup steps on Connect/Settings.
-- **OAuth quick setup**: redirect URI copy, links to Google/Azure consoles, 3-step checklist.
-- **OAuth diagnostics** connection checklist on Connect/Settings.
-- Optional **Google client secret** field for Web OAuth clients.
-- **Spreadsheet URL parsing** — paste full `docs.google.com/...` URL; ID extracted automatically.
-
-### OAuth & auth fixes
-
-- PKCE browser flow without secret for **Desktop** clients.
-- Optional `client_secret` on token exchange/refresh for **Web** clients.
-- Normalized redirect URI to **`{origin}/`** to avoid `/index.html` mismatch.
-- Actionable error messages for `redirect_uri_mismatch`, `client_secret`, and Google API errors.
-- Credentials saved from forms before **Connect** (Settings provider button).
-
-### Sync fixes
-
-- `parseGoogleSheetsError()` — readable errors (API disabled, missing `Leads` tab, etc.).
-- Do not queue non-retryable config errors (stops infinite **pending**).
-- Drop bad queue entries on flush when error is not retryable.
-- **Retry sync** (status pill + Settings) and **Clear pending queue**.
-- `connect()` preflight: spreadsheet ID and token checks before API calls.
-
-### Layout (web-native, laptop)
-
-- No Tauri/desktop shell — PWA only.
-- Responsive shell: `max-w-7xl` on large screens; sidebar nav on `lg+`; bottom nav on mobile.
-- Home/Leads/Timeline multi-column layouts on wide screens.
-
-### Service worker
-
-- Cache name bumped through **v32** (bump in `service-worker.js` after deploys; hard-refresh when testing).
-
----
-
-## Project structure
-
-```text
+```
 mini-crm/
-  index.html          # Shell, Tailwind CDN, global styles
-  manifest.json       # PWA manifest
-  service-worker.js   # Offline shell cache
+  index.html              App shell
+  manifest.json           PWA manifest
+  service-worker.js       Offline caching
   src/
-    app.js            # Bootstrap, routing, auth gate
-    auth/             # TokenManager (Google + Microsoft PKCE)
-    adapters/         # Google Sheets, Microsoft Graph
-    store/LeadStore.js
-    sync/             # SyncManager, OfflineQueue, LeadCache
-    views/            # Home, Leads, Timeline, Connect, Settings
-    components/       # UI pieces (nav, drawer, OAuth helpers)
+    app.js                Routing, auth gate, layout
+    auth/                 TokenManager (Google + Microsoft)
+    adapters/             Google Sheets & OneDrive adapters
+    store/LeadStore.js    Local state + sync hooks
+    sync/                 SyncManager, OfflineQueue, LeadCache
+    views/                Home, Leads, Timeline, Connect, Settings
+    components/           Cards, drawer, nav, OAuth helpers
 ```
 
 ---
 
-## Development notes
+## Deploying (e.g. Vercel)
 
-- Run only over **http://** or **https://** — not `file://`.
-- Google OAuth while Testing: every user must be a **Test user** or publish the app.
-- Team Google Sheets: one Spreadsheet ID, each person uses their own OAuth Client ID (or shared) and own sign-in.
-- **Do not commit** client secrets or `.env` files to git.
+1. Deploy the `mini-crm/` folder as a static site.
+2. Update OAuth redirect URIs in Google/Azure to your production URL (e.g. `https://your-app.vercel.app/`).
+3. Users open the deployed URL, paste Client ID + Spreadsheet ID in Settings.
+
+Do **not** commit client secrets to git. For production Web OAuth clients, prefer server-side token exchange or Desktop-style clients for personal use.
+
+---
+
+## Security notes
+
+- OAuth tokens and settings stay in **browser localStorage** on the device.
+- Each user should use their **own** Google/Microsoft sign-in.
+- Shared sheets: teammates need **Editor** access on the file; row visibility is filtered by `OwnerEmail`.
+- Legacy rows without `OwnerEmail` are hidden until re-created with an owner.
 
 ---
 

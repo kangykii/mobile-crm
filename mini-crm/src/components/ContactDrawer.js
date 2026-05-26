@@ -1,4 +1,6 @@
 import { EVENT_TYPES, parseTimeline } from "../core/domain/timelineEvent.js";
+import { getNextStage } from "../core/utils/UrgencyDetector.js";
+import { getStageTheme } from "../core/utils/stageTheme.js";
 import { actionHref, formatCurrency, formatDateTime, formatPhone, formatRelativeTime, initials } from "../core/utils/formatters.js";
 
 const EDITABLE_FIELDS = new Set(["Phone", "Email", "Value"]);
@@ -49,6 +51,22 @@ export class ContactDrawer {
       }
     });
     this.bindEditableFields();
+
+    this.root.querySelector("[data-advance-stage]")?.addEventListener("click", async () => {
+      if (!this.activeLead) {
+        return;
+      }
+
+      const nextStage = getNextStage(this.activeLead.Stage);
+      if (!nextStage) {
+        return;
+      }
+
+      const updated = await this.store.advanceStage(this.activeLead.ID, nextStage);
+      if (updated) {
+        this.open(updated);
+      }
+    });
 
     this.root.querySelector("[data-edit-lead]")?.addEventListener("click", () => {
       this.notifier?.show("Edit action is stubbed for Phase 1.", "info");
@@ -213,6 +231,8 @@ export class ContactDrawer {
 
   template(lead) {
     const events = parseTimeline(lead.NotesTimeline);
+    const nextStage = getNextStage(lead.Stage);
+    const theme = getStageTheme(lead.Stage);
 
     return `
       <div class="fixed inset-0 z-40 bg-[#181818]/25 backdrop-blur-sm" data-close-drawer>
@@ -227,11 +247,13 @@ export class ContactDrawer {
             <div class="flex items-start justify-between gap-4">
               <div>
                 <h2 class="inline-flex items-center gap-2 text-2xl font-bold text-[#181818]">
-                  <span class="inline-avatar inline-avatar-lg">${initials(lead.Name)}</span>
+                  <span class="inline-avatar inline-avatar-lg" style="background:${theme.fill}; color:${theme.text};">${initials(lead.Name)}</span>
                   ${lead.Name}
                 </h2>
                 <p class="mt-1 text-sm font-medium text-[#706E6B]">${lead.Company}</p>
-                <p class="mt-1 text-xs font-medium text-[#969492]">${lead.Stage} · ${formatRelativeTime(lead.LastContactedAt)}</p>
+                <p class="mt-2 inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide" style="background:${theme.fill}; color:${theme.text};">
+                  ${lead.Stage} · ${formatRelativeTime(lead.LastContactedAt)}
+                </p>
               </div>
               <button class="rounded-full border border-[#C9C9C9] bg-white p-2 text-[#706E6B] transition hover:border-[#0176D3] hover:text-[#0176D3]" data-close-drawer aria-label="Close drawer">
                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
@@ -239,6 +261,19 @@ export class ContactDrawer {
                 </svg>
               </button>
             </div>
+
+            ${
+              nextStage
+                ? `<button
+                    type="button"
+                    data-advance-stage
+                    class="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#34C759] px-4 py-3.5 text-sm font-bold text-white transition hover:bg-[#2E844A]"
+                  >
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                    Move to ${nextStage}
+                  </button>`
+                : ""
+            }
 
             <div class="mt-6 grid grid-cols-2 gap-3">
               ${this.editableCard({

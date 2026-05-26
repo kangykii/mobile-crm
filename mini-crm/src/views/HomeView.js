@@ -102,7 +102,6 @@ export class HomeView {
     bindSwipeableRows(root, {
       leads: this.store.getLeads(),
       onOpenLead: this.onOpenLead,
-      onAdvanceStage: (leadId, stage) => this.store.advanceStage(leadId, stage),
     });
   }
 
